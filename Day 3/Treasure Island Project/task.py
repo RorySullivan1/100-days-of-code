@@ -22,3 +22,26 @@ ____/______/______/______/______/_____"=.o|o_.--""___/______/______/______/____
 ''')
 print("Welcome to Treasure Island.")
 print("Your mission is to find the treasure.")
+
+dead = False
+death = ""
+
+while not dead:
+    if input("Left (L) or Right (R)?") == "R":
+        dead = True
+        death = "electrocution"
+        break
+    if input("Swim or Wait") == "Swim":
+        dead = True
+        death = "drowning"
+        break
+    if input("Choose a door: Red, Blue, Yellow") is not "Yellow":
+        dead = True
+        death = "Eaten Alive"
+        break
+
+if dead:
+    print("You have died by {}!".format(death))
+else:
+    print("You have won! Here is $1 million")
+
