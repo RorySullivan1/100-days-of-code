@@ -1,29 +1,37 @@
 
 import random
 
+class Deck:
+    def __init__(self):
+        self.card_number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"]
+        self.card_suits = ["C", "S", "H", "D"]
+        self.cards = []
+        for card in self.card_number:
+            self.cards += [str(card) + suit for suit in self.card_suits]
+
 class Blackjack:
     def __init__(self, number_of_decks: int):
-        self.cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"]
-        self.suits = ["C","S","H","D"]
-        self.cards_in_play = self.cards * number_of_decks
-        self.dealer = None
+        self.cards = Deck().cards * number_of_decks
+        self.dealer = Dealer()
         self.players = []
 
-    def shuffle(self):
-        for x in range(0, 3): # Shuffle 3x
-            random.shuffle(self.cards_in_play)
+    def shuffle(self, shuffles: int):
+        for x in range(0, shuffles): # Shuffle 3x
+            random.shuffle(self.cards)
 
-    def deal(self):
-        for x in range(0,2): # Deal 2 cards
+    def deal(self, number_of_cards: int):
+        for x in range(0, number_of_cards): # Deal 2 cards
             for player in self.players:
-                card = random.choice(self.cards_in_play)
+
+                card = self.cards[0] # Deal first available cards
                 player.hand += card
                 player.hand_value = value_card(hand_value=player.hand_value, card=card)
+
                 print("Player: " + player.name)
                 print(player.hand)
                 print(player.hand_value)
 
-            card = random.choice(self.cards_in_play)
+            card = random.choice(self.cards)
             self.dealer.hand += card
             self.dealer.hand_value = value_card(hand_value=self.dealer.hand_value, card=card)
             print("Dealer")
