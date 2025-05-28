@@ -1,180 +1,238 @@
-
+import os
 import random
+from typing import Optional, Union
+
+class Card:
+    available_denom = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+    available_suits = ["Clubs", "Spades", "Hearts", "Diamonds"]
+
+    def __init__(self, denom: str, suit: str):
+        assert denom in self.available_denom, ValueError(f"Card Denomination Invalid {denom}")
+        assert suit in self.available_suits, ValueError(f"Suit Invalid {suit}")
+        self.denom = denom
+        self.suit = suit
+
+    def __str__(self):
+        return f'{self.denom} of {self.suit}'
 
 class Deck:
+
     def __init__(self):
-        self.card_number = [2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"]
-        self.card_suits = ["C", "S", "H", "D"]
         self.cards = []
-        for card in self.card_number:
-            self.cards += [str(card) + suit for suit in self.card_suits]
+        for denom in Card.available_denom:
+            self.cards += [Card(denom=denom, suit=suit) for suit in Card.available_suits]
 
-class Participant:
-    def __init__(self):
-        self.hand = ""
-        self.hand_value = 0
-        self.wager = 0
+        for _ in range(3): # Shuffle 3x
+            self.shuffle()
 
-    def restart(self):
-        return Participant.__init__(self)
-
-class Player(Participant):
-    def __init__(self, name: str, buyin: float):
-        super().__init__()
-        self.name = name
-        self.money = buyin
-        self.wager = 0
-
-class Dealer(Participant):
-    def __init__(self):
-        super().__init__()
-
-def shuffle(cards: list, shuffles: int):
-    for x in range(0, shuffles): # Shuffle 3x
-        random.shuffle(cards)
-    return cards
-
-
-class Blackjack:
-    def __init__(self, number_of_decks: int):
-        self.cards = Deck().cards * number_of_decks
-        self.dealer = Dealer()
-        self.players = []
-
-    def bet(self):
-        for player in self.players:
-            wager = float(input(f"{player.name}. How Much would you like to wager?"))
-            if player.money < wager:
-                raise ValueError("Insufficient Funds")
-            else:
-                player.money -= wager
-                player.wager = wager
-
+    def shuffle(self):
+        random.shuffle(self.cards)
 
     def deal(self):
-        for x in range(0, 2): # Deal 2 cards per person
-            for player in self.players:
-                card = self.cards.pop(0) # Deal first available cards
-                player.hand += card
-                player.hand_value = value_card(hand_value=player.hand_value, card=card)
+        return self.cards.pop()
 
-                print("Player: " + player.name)
-                print(player.hand)
-                print(player.hand_value)
+class CardHand:
+    def __init__(self):
+        self.cards = []
 
-            card = random.choice(self.cards)
-            self.dealer.hand += card
-            self.dealer.hand_value = value_card(hand_value=self.dealer.hand_value, card=card)
-        print("Dealer")
-        print(self.dealer.hand[0] + "x")
+    def __str__(self):
+        return ", ".join(f"{c}" for c in self.cards) or "Empty Hand"
 
-    def hit(self, player: Player):
-        card = self.cards.pop(0)  # Deal first available cards
-        player.hand += card
-        player.hand_value = value_card(hand_value=player.hand_value, card=card)
+    def add_card(self, card: Card):
+        self.cards.append(card)
 
-    def double(self, player: Player): ...
+    def clear(self):
+        self.cards.clear()
 
-    def split(self, player: Player): ...
-
-    def refresh(self):
-        for player in self.players:
-            if player.money > 0:
-                # Refresh Player Hand
-                player.restart()
+    def value(self):
+        total, aces = 0, 0
+        for card in self.cards:
+            if card.denom in ["J", "Q", "K"]:
+                total += 10
+            elif card.denom == "A":
+                total += 11
+                aces += 1
             else:
-                # Drop Player
-                self.players.pop(self.players.index(player))
+                total += int(card.denom)
+        while total > 21 and aces:
+            total -= 10
+            aces -= 1
+        return total
 
-    def assess_hands(self):
-        for player in self.players:
-            if player.hand_value > self.dealer.hand_value:
-                player.money += player.wager * 2
-                print(f"Player {player.name} wins {player.wager * 2}")
-            elif player.hand_value == self.dealer.hand_value:
-                player.money += player.wager
-                print(f"Player {player.name} pushes")
-            else:
-                print(f"Player {player.name} losses")
+    def is_blackjack(self):
+        return self.value() == 21 and len(self.cards) == 2
 
-    def play(self):
-        adding_players = True
-        self.dealer = Dealer()
-
-        # Setup Game
-        while adding_players:
-            player = input("Enter Player Name!")
-            buyin = int(input("How much are you playing with?"))
-            self.players.append(Player(name=player, buyin=buyin))
-            adding_players = input("Add another player? (Y/N)").lower() != "n"
-
-        # Play Game
-        playing = True
-        while playing:
-            game_on = True
-            while game_on:
-
-                #Shuffle
-                self.cards = shuffle(self.cards, 3)
-
-                # Place Bets
-                self.bet()
-
-                # Deal Cards
-                self.deal()
-
-                # Payout Blackjack
-                if self.dealer.hand_value == 21:
-                    "Dealer Blackjack"
-                    self.assess_hands()
-                    game_on = False
-
-                # Player Choices
-                for player in self.players:
-                    if player.hand_value == 21:
-                        player.money += player.wager * 2.5
-                        print(f"Player {player.name} Blackjack!")
-                        continue
-                    else:
-                        choosing = True
-                        while choosing:
-                            print(f"Player {player.name}:\n Cards {player.hand} ({player.hand_value})")
-                            choice = input(f"Hit (H), Stand (S), Split (X), Double (D)?").upper()
-                            if choice == "H":
-                                self.hit(player)
-                            elif choice == "S":
-                                choosing = False
-                            elif choice == "X":
-                                raise NotImplemented()
-                            elif choice == "D":
-                                raise NotImplemented()
-
-                            if player.hand_value > 21:
-                                print(f"Player {player.name} Busts")
-                                player.wager = 0
-                                choosing = False
-
-                self.assess_hands()
-
-            # refresh
-            self.refresh()
-            playing = True if input("Play Again? (Y/N)") == "Y" else False
+    def is_bust(self):
+        return self.value() > 21
 
 
-def value_card(hand_value: int, card: str | int):
-    print(card)
-    if card in ["J", "Q", "K"]:
-        return 10
-    elif card == "A":
-        if hand_value < 11:
-            return 1
+class Player:
+    def __init__(self, id: str, chips: Union[float, int] = 100):
+        self.id = id
+        self.chips = chips
+        self.wager = 0
+        self.hand = CardHand()
+
+    def recieve_card(self, card: Union[Card, list[Card]]):
+        if isinstance(card, Card):
+            self.hand.add_card(card)
+        elif isinstance(card, list):
+            for c in card:
+                assert isinstance(c, Card), ValueError("Card Type Expected")
+                self.hand.add_card(c)
+
+    def reset_hand(self):
+        self.wager = 0
+        self.hand.clear()
+
+    def win_hand(self, multiplier: float = 2):
+        self.chips += self.wager * multiplier
+        print(f"Player wins {self.wager}.\nChip Count: {self.chips}")
+        self.reset_hand()
+
+
+    def stalemate(self):
+        self.chips += self.wager
+        print(f"Player Push.\nChip Count: {self.chips}")
+        self.reset_hand()
+
+    def lose_hand(self):
+        print(f"Player loss.\nChip Count: {self.chips}")
+        self.reset_hand()
+
+    def show_position(self, verbose: bool = False):
+        if verbose:
+            print(f"{self.id}: {self.hand} (Value: {self.hand.value()})"
+                  f"\nCurrent Wager: {self.wager}"
+                  f"\nChips Remaining: {self.chips}\n")
         else:
-            return 11
-    else:
-        return int(card[:-1])
+            print(f"{self.id}: {self.hand} (Value: {self.hand.value()})")
+
+class Dealer(Player):
+    def show_initial(self):
+        return f"\nDealer Shows: {self.hand.cards[0]}\n"
+
+    def must_hit(self):
+        return self.hand.value() < 17
+
+class BlackJack:
+    def __init__(self):
+        self.deck = Deck()
+        self.dealer = Dealer("Dealer")
+        self.players = self._add_players()
+
+    @staticmethod
+    def _add_players():
+        players = []
+        collecting_players = True
+        while collecting_players:
+            name = input("Add Player! Enter Name: ")
+            chips = float(input("Purchase how many chips? ('N' to skip)").lower())
+            if chips == "n":
+                players.append(Player(id=name))
+            else:
+                players.append(Player(id=name, chips=chips))
+            if input("Add more Players? (Y/N)").lower() == "n":
+                collecting_players = False
+        return players
+
+    def reset_game(self):
+        for player in self.players:
+            player.reset_hand()
+        self.dealer.reset_hand()
+        self.deck = Deck()
+
+    def deal_cards(self):
+        for _ in range(2): # Deal 2 cards
+            for player in self.players:
+                player.recieve_card(self.deck.deal())
+            self.dealer.recieve_card(self.deck.deal())
+
+    def collect_bets(self):
+        for player in self.players:
+            print(f"Player {player.id} | Chips Remaining: {player.chips}")
+            bet = float(input(f"Place your bet!").strip())
+            assert bet <= player.chips, ValueError("Bet exceeds chips available")
+            player.chips -= bet
+            player.wager = bet
+
+    def collect_choices(self):
+        for player in self.players:
+            if not player.hand:
+                pass
+            else:
+                player.show_position(verbose=True)
+                while not player.hand.is_bust():
+                    player_choice = input("Hit (H) or Stand (S)?").strip().lower()
+                    if player_choice == "h":
+                        player.recieve_card(self.deck.deal())
+                        player.show_position()
+                    elif player_choice == "s":
+                        break
+                    else:
+                        raise ValueError(f"Invalid Choice {player_choice}")
+
+    def dealer_move(self):
+        if not self.dealer.hand.is_bust():
+            print("\nDealer's Turn:")
+            self.dealer.show_position(verbose=False)
+            while self.dealer.must_hit():
+                self.dealer.recieve_card(self.deck.deal())
+                self.dealer.show_position(verbose=False)
+
+    def pay_blackjacks(self):
+        for player in self.players:
+            if player.hand.is_blackjack():
+                print(f"Blackjack for {player.id}")
+                player.win_hand(2.5)
+
+    def assess_hand(self, player: Player):
+        p_val = player.hand.value()
+        d_val = self.dealer.hand.value()
+
+        if not player.hand:
+            return
+        if player.hand.is_bust():
+            print("Player Busts")
+            player.lose_hand()
+        elif self.dealer.hand.is_bust():
+            print("Dealer Busts")
+            player.win_hand(2)
+        elif p_val > d_val:
+            print("Player wins!")
+            player.win_hand(2)
+        elif d_val > p_val:
+            print("Dealer wins!")
+            player.lose_hand()
+        elif d_val == p_val:
+            print("Push!")
+
+    def evaluate(self):
+        for player in self.players:
+            self.assess_hand(player)
+
+
+    def play_round(self):
+        self.reset_game()
+        self.collect_bets()
+        self.deal_cards()
+        print(self.dealer.show_initial())
+        self.pay_blackjacks()
+        self.collect_choices()
+        self.dealer_move()
+        self.evaluate()
+
+    @staticmethod
+    def play():
+        game_on = True
+
+        game = BlackJack()
+        while game_on:
+            game.play_round()
+            game_on = True if input("Play Again? (Y/N)").lower() == "y" else False
+
 
 if __name__ == "__main__":
-    game = Blackjack(3)
-    game.play()
+    BlackJack.play()
 
 
