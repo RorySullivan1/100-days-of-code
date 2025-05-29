@@ -2,6 +2,10 @@ import os
 import random
 from typing import Optional, Union
 
+from Tools.scripts.summarize_stats import print_comparative_specialization_stats
+
+import art
+
 class Card:
     available_denom = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
     available_suits = ["Clubs", "Spades", "Hearts", "Diamonds"]
@@ -17,10 +21,11 @@ class Card:
 
 class Deck:
 
-    def __init__(self):
+    def __init__(self, number_of_decks: int = 1):
         self.cards = []
         for denom in Card.available_denom:
-            self.cards += [Card(denom=denom, suit=suit) for suit in Card.available_suits]
+            self.cards += ([Card(denom=denom, suit=suit) for suit in Card.available_suits])
+        self.cards = self.cards * number_of_decks
 
         for _ in range(3): # Shuffle 3x
             self.shuffle()
@@ -116,8 +121,9 @@ class Dealer(Player):
         return self.hand.value() < 17
 
 class BlackJack:
-    def __init__(self):
-        self.deck = Deck()
+    def __init__(self, deck_count: Optional[int] = 3):
+        self.deck_count = deck_count
+        self.deck = Deck(deck_count)
         self.dealer = Dealer("Dealer")
         self.players = self._add_players()
 
@@ -127,7 +133,8 @@ class BlackJack:
         collecting_players = True
         while collecting_players:
             name = input("Add Player! Enter Name: ")
-            chips = float(input("Purchase how many chips? ('N' to skip)").lower())
+            buyin = input("Purchase how many chips?").lower()
+            chips = float(1000 if not buyin else float(buyin))
             if chips == "n":
                 players.append(Player(id=name))
             else:
@@ -140,7 +147,7 @@ class BlackJack:
         for player in self.players:
             player.reset_hand()
         self.dealer.reset_hand()
-        self.deck = Deck()
+        self.deck = Deck(self.deck_count)
 
     def deal_cards(self):
         for _ in range(2): # Deal 2 cards
@@ -225,8 +232,9 @@ class BlackJack:
     @staticmethod
     def play():
         game_on = True
-
+        print(art.logo)
         game = BlackJack()
+
         while game_on:
             game.play_round()
             game_on = True if input("Play Again? (Y/N)").lower() == "y" else False
