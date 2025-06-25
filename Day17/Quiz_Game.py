@@ -18,13 +18,14 @@ class QuizGame:
         ...
 
     def run(self):
-        question_limit = len(self.questions) - self.question_count
-
-        while len(self.questions) > question_limit:
+        x = 0
+        while x <= self.question_count:
             question = self.questions.pop()
+            print(f"\nQuestion #{x + 1}:")
             question.ask_question()
             if question.assess_answer():
                 self.score += 1
+            x += 1
 
         # Game complete - Report Score!
         print("Questions Complete!")
@@ -38,7 +39,7 @@ class Question:
 
     def ask_question(self):
         print(self.question)
-        self.user_answer = input("\nWhat is the answer?\n").lower()
+        self.user_answer = input("\nTrue or False?\n").lower()
 
     def assess_answer(self):
         if self.correct_answer == self.user_answer:
