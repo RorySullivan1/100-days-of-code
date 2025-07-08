@@ -44,8 +44,8 @@ class SnakeGame:
         elif snake_head.ycor() < BOUNDARIES[0] or snake_head.ycor() > BOUNDARIES[1]:
             return False
 
-        for seg in self.snake.segments:
-            if snake_head.distance(seg) < 10 and not seg == snake_head:
+        for seg in self.snake.segments[1:]:
+            if snake_head.distance(seg) < 10:
                 return False
 
         return True
